@@ -14,12 +14,20 @@ class fb_database:
         ref=db.reference(relative_reference)
         ref.set(data_dict)
 
+    def get_data(self,relative_reference):
+        ref=db.reference(relative_reference)
+        return ref.get()
+
 
 if __name__ == "__main__":
-    parser=argparse.ArgumentParser(description='CRUD operations on a firebase realtime database at bruey enterprises specifically')
-    parser.add_argument('ref',type=str,help='this is the reference within the mega JSON tree that will act as the root for the input data')
-    parser.add_argument('data',type=dict,help='this is the data you want to write to the firebase realtime database')    
+#    parser=argparse.ArgumentParser(description='CRUD operations on a firebase realtime database at bruey enterprises specifically')
+#    parser.add_argument('ref',type=str,help='this is the reference within the mega JSON tree that will act as the root for the input data')
+#    parser.add_argument('data',type=dict,help='this is the data you want to write to the firebase realtime database')    
 
-    print('fest')
+    mydb=fb_database()
+    x=mydb.get_data('/')
+    print(x)
+
+    
     
     
