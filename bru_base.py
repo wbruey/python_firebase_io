@@ -18,6 +18,15 @@ class fb_database:
         ref=db.reference(relative_reference)
         return ref.get()
 
+class time_series_json:
+
+    def __init__(self,doc_type='jts',version='1.0'):
+        self.doc_type=doc_type
+        self.version=version
+
+        
+        
+        
 
 if __name__ == "__main__":
 #    parser=argparse.ArgumentParser(description='CRUD operations on a firebase realtime database at bruey enterprises specifically')

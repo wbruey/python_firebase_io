@@ -1,0 +1,1 @@
+{"prop_mass": 0.06, "average_thrust": 14.38, "final_mass": 0.034, "0": {"delay": 0, "initial_mass": 0.094}, "4": {"delay": 4.33, "initial_mass": 0.101}, "6": {"delay": 6.33, "initial_mass": 0.104}, "8": {"delay": 7.25, "initial_mass": 0.105}, "impulse_std_dev_percent": 2, "total_impulse": 49.61}
