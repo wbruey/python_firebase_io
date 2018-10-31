@@ -21,7 +21,10 @@ class vehicle:
     def __init__(self,stages):  #stages is a LIST of stage objects
         self.stages=stages
         logging.info('vehicle has '+str(len(self.stages)) + ' stages ')
-
+        self.wet_mass=0
+        for stage in self.stages:
+            self.wet_mass=self.wet_mass+stage.wet_mass
+        logging.info('vehicle has wet mass of ' + str(self.wet_mass) + ' kg ')
 
 class stage:
 
@@ -30,10 +33,15 @@ class stage:
         self.engines=engines
         self.cross_section=cross_section
         self.drag_coeff=drag_coeff
+        self.wet_mass=self.dry_mass
+        self.prop_mass=0
         logging.info('stage added with ' + str(self.dry_mass) + ' kg of dry mass and the following engines')
         for engine in self.engines:
             logging.info(engine.part_num)
-        logging.info('this stage has a '+str(self.cross_section) + ' m^2 cross section and a drag coefficient of ' + str(self.drag_coeff))
+            self.wet_mass=self.wet_mass+engine.initial_mass
+            self.prop_mass=self.prop_mass+engine.prop_mass
+        self.final_mass=self.wet_mass-self.prop_mass
+        logging.info('this stage has a '+str(self.cross_section) + ' m^2 cross section and a drag coefficient of ' + str(self.drag_coeff) +' and a total wet mass of ' + str(self.wet_mass) + ' after the engines have burned, this stage will have a final mass of ' + str(self.final_mass))
        
 
 class launch:
@@ -46,16 +54,13 @@ class launch:
         self.initial_conditions['alt0']=0
         self.initial_conditions['alt1']=0
         self.initial_conditions['vel0']=1
-        m0=0.0
+        m0=vehicle.wet_mass
         cross_section_0=0.0
         drag_coeff_0=0.0
         #gather initial conditions from all stages and engines
         for stage in vehicle.stages:
-            m0=m0+stage.dry_mass
             cross_section_0=max(cross_section_0,stage.cross_section)
             drag_coeff_0=max(drag_coeff_0,stage.drag_coeff)
-            for engine in stage.engines:
-                m0=m0+engine.initial_mass
         self.initial_conditions['mass0']=m0
         self.initial_conditions['Cd0']=0.5*density*drag_coeff_0*cross_section_0
         self.initial_conditions['weight0']=m0*9.8
