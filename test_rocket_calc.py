@@ -1,3 +1,4 @@
+print('STARTING NEW TEST OF ROCKET CALC======================================================================')
 import rocket_calc as rc
 
 #kick logging
@@ -6,6 +7,12 @@ rc.log_to_console()
 
 #kick engine class
 bru_solid=rc.engine('F15','0')
+print(bru_solid.initial_mass)
+print(bru_solid.prop_mass)
+print(bru_solid.specific_impulse)
+print(bru_solid.mass_loss)
+print(bru_solid.thrust)
+print(bru_solid.mass)
 
 #kick stage class
 bru_booster=[bru_solid, bru_solid]

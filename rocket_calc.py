@@ -4,7 +4,10 @@ import csv
 import logging
 import pandas as pd
 import numpy as np
+from scipy import integrate
 
+def simple_integrate(time_series):
+	return integrate.trapz(time_series.values, time_series.index.astype(np.int64) / 10**9)
 
 def setup_my_logger():
     logging.basicConfig(filename='rocket.log',level=logging.DEBUG,format='%(asctime)s %(message)s')
@@ -96,9 +99,10 @@ class engine:
 
     def __init__(self,part_num='F15',delay='0'): # expects there to be an xxx.thrust and an xxx.json to import.  You can get thurst curves here: http://www.thrustcurve.org/simfilesearch.jsp?id=2021
         try:
+            #open the thrust attributes file and load the static attributes for engine
             self.part_num=part_num
             with open(self.part_num+'.attributes') as json_file:
-                self.attributes=json.load(json_file)
+                    self.attributes=json.load(json_file)
             self.prop_mass=self.attributes['prop_mass']
             self.final_mass=self.attributes['final_mass']
             self.initial_mass=self.attributes[delay]['initial_mass']
@@ -106,7 +110,7 @@ class engine:
             self.isp=self.attributes['total_impulse']
             self.thrust_uncertainty_percent=self.attributes['impulse_std_dev_percent']
 
-
+            #load thrust file and create a time series from it.
             with open(self.part_num+'.thrust', 'rb') as csvfile:
                 thrust_reader=csv.reader(csvfile,delimiter= ' ')
                 times=[]
@@ -114,9 +118,17 @@ class engine:
                 for row in thrust_reader:
                     times.append(pd.Timedelta(row[0] +' seconds'))
                     thrust.append(float(row[1]))
-
             self.thrust=pd.Series(thrust,index=times)
             self.burn_duration=self.thrust.index[-1]-self.thrust.index[0]
+			
+            #create mass curve from thrust file
+            self.specific_impulse=simple_integrate(self.thrust)
+            self.mass_loss=self.thrust/self.specific_impulse*self.prop_mass
+            self.mass=self.initial_mass-self.mass_loss.cumsum()
+            
+			
+			
+			
             logging.info('loaded engine ' + part_num + ' prop mass '+str(self.prop_mass)+' final_mass '+str(self.final_mass)+' initial_mass '+str(self.initial_mass))
         except Exception:
             logging.exception('Failed to Load Engine')
