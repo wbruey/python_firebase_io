@@ -118,18 +118,24 @@ class engine:
                 for row in thrust_reader:
                     times.append(pd.Timedelta(row[0] +' seconds'))
                     thrust.append(float(row[1]))
-            self.thrust=pd.Series(thrust,index=times)
+            self.thrust=pd.Series(thrust,index=times,name='thrust')
             self.burn_duration=self.thrust.index[-1]-self.thrust.index[0]
 			
             #create mass curve from thrust file
             self.specific_impulse=simple_integrate(self.thrust)
             mass_loss=self.thrust/self.specific_impulse*self.prop_mass #normalize thrust curve and multiple by mass loss
+            mass_loss.name='mass_loss'
             tempdf=pd.DataFrame(mass_loss,columns=['mass_loss'])  #create a temp data frame
             tempdf['time']=mass_loss.index  #with time so we can do math on it.
             tempdf['dtime']=(tempdf['time']-tempdf['time'].shift()).fillna(0).astype('timedelta64[ms]')/1000.0  #and delta time
             self.mass=self.initial_mass-(((tempdf['mass_loss']+tempdf['mass_loss'].shift(-1).fillna(0))/2.0)*tempdf['dtime']).cumsum() #ad up the lsot mass trapazoid stype and subtract it from inital mass
+            #self.mass.name='mass'
                         
-            
+            #put mass and thrust into a milisecond dataframe
+            time_index=pd.timedelta_range(start=pd.Timedelta(value=0,unit='ms') ,end=self.thrust.index[-1],freq='ms')
+            self.engine_data=pd.DataFrame(self.thrust,index=time_index)
+            self.engine_data['mass']=self.mass
+            self.engine_data=self.engine_data.interpolate()          
             
 			
 			
