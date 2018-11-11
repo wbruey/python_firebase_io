@@ -7,7 +7,7 @@ import numpy as np
 from scipy import integrate
 
 def simple_integrate(time_series):
-	return integrate.trapz(time_series.values, time_series.index.astype(np.int64) / 10**9)
+	return integrate.trapz(time_series.values, time_series.index.astype('timedelta64[ms]') / 1000.0)
 
 def setup_my_logger():
     logging.basicConfig(filename='rocket.log',level=logging.DEBUG,format='%(asctime)s %(message)s')
@@ -123,8 +123,13 @@ class engine:
 			
             #create mass curve from thrust file
             self.specific_impulse=simple_integrate(self.thrust)
-            self.mass_loss=self.thrust/self.specific_impulse*self.prop_mass
-            self.mass=self.initial_mass-self.mass_loss.cumsum()
+            mass_loss=self.thrust/self.specific_impulse*self.prop_mass #normalize thrust curve and multiple by mass loss
+            tempdf=pd.DataFrame(mass_loss,columns=['mass_loss'])  #create a temp data frame
+            tempdf['time']=mass_loss.index  #with time so we can do math on it.
+            tempdf['dtime']=(tempdf['time']-tempdf['time'].shift()).fillna(0).astype('timedelta64[ms]')/1000.0  #and delta time
+            self.mass=self.initial_mass-(((tempdf['mass_loss']+tempdf['mass_loss'].shift(-1).fillna(0))/2.0)*tempdf['dtime']).cumsum() #ad up the lsot mass trapazoid stype and subtract it from inital mass
+                        
+            
             
 			
 			

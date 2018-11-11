@@ -10,9 +10,9 @@ bru_solid=rc.engine('F15','0')
 print(bru_solid.initial_mass)
 print(bru_solid.prop_mass)
 print(bru_solid.specific_impulse)
-print(bru_solid.mass_loss)
 print(bru_solid.thrust)
 print(bru_solid.mass)
+print(bru_solid.final_mass)
 
 #kick stage class
 bru_booster=[bru_solid, bru_solid]

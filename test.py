@@ -19,7 +19,8 @@ with open('F15.thrust', 'rb') as csvfile:
         thrust.append(float(row[1]))
 
 thrust=pd.Series(thrust,index=times,name='thrust')
-#print(thrust)
+print(thrust)
+print(thrust.shift())
 
 start=pd.Timestamp(year=2018,month=11,day=25,hour=10,minute=30, second=0, microsecond=0) 
 #print(start)
@@ -58,13 +59,13 @@ launch_data['accel'][0]=(launch_data['thrust'][0]-launch_data['drag'][0]-launch_
 
 delta=launch_data.index[1]-launch_data.index[0]
 delta=delta.total_seconds()
-print(delta)
-print(delta * 5)
-print(type(delta*5))
+#print(delta)
+#print(delta * 5)
+#print(type(delta*5))
 
 
 
-print(launch_data)
+#print(launch_data)
 
 #print(launch_data['first_stage_thrust'][2])
 
