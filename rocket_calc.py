@@ -19,18 +19,6 @@ def log_to_console():
     console.setFormatter(formatter)
     logging.getLogger('').addHandler(console)    
 
-class vehicle:
-
-    def __init__(self,stages):  #stages is a LIST of stage objects
-        self.stages=stages
-        logging.info('vehicle has '+str(len(self.stages)) + ' stages ')
-        self.wet_mass=0
-        for stage in self.stages:
-            self.wet_mass=self.wet_mass+stage.wet_mass
-        logging.info('vehicle has wet mass of ' + str(self.wet_mass) + ' kg ')
-
-
-
 class engine:
 
     def __init__(self,part_num='F15',delay='0'): # expects there to be an xxx.thrust and an xxx.json to import.  You can get thurst curves here: http://www.thrustcurve.org/simfilesearch.jsp?id=2021
@@ -116,6 +104,37 @@ class stage:
         
         logging.info('this stage has a '+str(self.cross_section) + ' m^2 cross section and a drag coefficient of ' + str(self.drag_coeff) +' and a total wet mass of ' + str(self.wet_mass) + ' after the engines have burned, this stage will have a final mass of ' + str(self.final_mass))
        
+class vehicle:
+
+    def __init__(self,stages):  #stages is a LIST of stage objects
+        self.stages=stages
+        logging.info('vehicle has '+str(len(self.stages)) + ' stages ')
+        self.wet_mass=0
+        self.burn_duration=pd.Timedelta(0,'ms')
+        
+        
+        #for each stage, add the mass of all higher stages, add a stage_number to the stage_data frame
+        mass_above=0
+        self.stage_count=len(stages)
+        stage_index=self.stage_count
+        for stage in reversed(self.stages):
+            self.wet_mass=self.wet_mass+stage.wet_mass
+            stage.stage_data['mass']=stage.stage_data['mass']+mass_above
+            mass_above=mass_above+stage.wet_mass   
+            self.burn_duration=self.burn_duration+stage.burn_duration
+            stage.stage_data['stage_number']=np.zeros(len(stage.stage_data))+stage_index
+            stage_index=stage_index-1
+        
+        #for each stage concatenate them into a vehicle_data frame
+        self.vehicle_data=pd.DataFrame()
+        stage_sep=pd.Timedelta(0,'ms')
+        for stage in self.stages:
+            #add offsets for each stage when they begin their time stamp
+            stage.stage_data.index=stage.stage_data.index+stage_sep
+            stage_sep=stage.stage_data.index[-1]
+            self.vehicle_data=pd.concat([self.vehicle_data,stage.stage_data])
+  
+        logging.info('vehicle has wet mass of ' + str(self.wet_mass) + ' kg ')
 
         
 class launch:

@@ -22,12 +22,17 @@ stage_1=rc.stage(0.1,bru_booster,.02,.75)
 print(stage_1.stage_data)
 stage_2=rc.stage(0.2,bru_orbiter,.03,.76)
 
+
 #kick vehicle class
 rocket_assembly=[stage_1, stage_2]
 thanks_giver=rc.vehicle(rocket_assembly)
+print(thanks_giver.vehicle_data)
+
+thanks_giver.vehicle_data.to_csv('vehicle_data.csv')
 
 #kick launch class
-launch_sim=rc.launch(thanks_giver,30,1)
+#launch_sim=rc.launch(thanks_giver,30,1)
+
 
 #print(launch_sim.launch_data)
 
