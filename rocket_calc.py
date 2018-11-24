@@ -139,8 +139,31 @@ class vehicle:
         
 class launch:
 
+    
+    
+    
+    
+    
     def __init__(self,vehicle,sim_duration,density): #density is in kg/m^3  #duration in seconds
 
+        
+        #create skeleton launch data 
+        time_index=pd.timedelta_range(start=pd.Timedelta(value=0,unit='ms'), end=pd.Timedelta(value=1000*sim_duration=,unit='ms'))
+        self.launch_data=pd.DataFrame(index=time_index)
+        self.launch_data['altitude']=np.zeros(len(time_index))
+        self.launch_data['velocity']=np.zeros(len(time_index))
+        self.launch_data['drag']=np.zeros(len(time_index))
+        self.launch_data['acceleration']=np.zeros(len(time_index))
+        
+        #import launch data
+        
+        
+        
+        
+        
+        
+        
+        
         #Define physics initial conditions
         self.density=density
         self.initial_conditions={}
@@ -150,6 +173,12 @@ class launch:
         m0=vehicle.wet_mass
         cross_section_0=0.0         
         drag_coeff_0=0.0
+        
+        
+        #run simulator to calculate next step for each time step in series.
+        
+        
+        
         #gather initial conditions from all stages and engines
         for stage in vehicle.stages:
             cross_section_0=max(cross_section_0,stage.cross_section)
