@@ -31,8 +31,10 @@ print(thanks_giver.vehicle_data)
 thanks_giver.vehicle_data.to_csv('vehicle_data.csv')
 
 #kick launch class
-#launch_sim=rc.launch(thanks_giver,30,1)
+launch_sim=rc.launch(thanks_giver,60,1)
+print(launch_sim.launch_data)
 
+launch_sim.launch_data.to_csv('launch_data.csv')
 
 #print(launch_sim.launch_data)
 

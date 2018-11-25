@@ -5,6 +5,7 @@ import logging
 import pandas as pd
 import numpy as np
 from scipy import integrate
+import time
 
 def simple_integrate(time_series):
 	return integrate.trapz(time_series.values, time_series.index.astype('timedelta64[ms]') / 1000.0)
@@ -18,6 +19,10 @@ def log_to_console():
     formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
     console.setFormatter(formatter)
     logging.getLogger('').addHandler(console)    
+    
+def calc_drag_force(cross_section,drag_coeff,velocity,density):
+    return 0.5*density*velocity*velocity*drag_coeff*cross_section
+    
 
 class engine:
 
@@ -133,83 +138,117 @@ class vehicle:
         for stage in self.stages:
             #add offsets for each stage when they begin their time stamp
             stage.stage_data.index=stage.stage_data.index+stage_sep
-            stage_sep=stage.stage_data.index[-1]
+            stage_sep=stage.stage_data.index[-1]+pd.Timedelta(value=1,unit='ms')
             self.vehicle_data=pd.concat([self.vehicle_data,stage.stage_data])
   
         logging.info('vehicle has wet mass of ' + str(self.wet_mass) + ' kg ')
 
         
 class launch:
-
-    
-    
-    
     
     
     def __init__(self,vehicle,sim_duration,density): #density is in kg/m^3  #duration in seconds
 
+        self.vehicle=vehicle
+        self.sim_duration=sim_duration
+        self.density=density
         
         #create skeleton launch data 
-        #time_index=pd.timedelta_range(start=pd.Timedelta(value=0,unit='ms'), end=pd.Timedelta(value=1000*sim_duration=,unit='ms'))
+        time_index=pd.timedelta_range(start=pd.Timedelta(value=0,unit='ms'), end=pd.Timedelta(value=self.sim_duration*1000,unit='ms'),freq='ms')
         self.launch_data=pd.DataFrame(index=time_index)
         self.launch_data['altitude']=np.zeros(len(time_index))
         self.launch_data['velocity']=np.zeros(len(time_index))
         self.launch_data['drag']=np.zeros(len(time_index))
         self.launch_data['acceleration']=np.zeros(len(time_index))
-        
+         
         #import launch data
+        self.launch_data=pd.concat([self.launch_data,self.vehicle.vehicle_data],axis=1,sort=False)
+        self.launch_data['thrust']=self.launch_data['thrust'].fillna(0)
+        self.launch_data['mass']=self.launch_data['mass'].interpolate()
+        self.launch_data['stage_number']=self.launch_data['stage_number'].interpolate()
+        self.launch_data['drag_coeff']=self.launch_data['drag_coeff'].interpolate()
+        self.launch_data['cross_section']=self.launch_data['cross_section'].interpolate()
+        
+        #define initial conditions
+        self.launch_data['altitude'][0]=0
+        self.launch_data['velocity'][0]=0
+        self.launch_data['drag'][0]=calc_drag_force(self.launch_data['cross_section'][0],self.launch_data['drag_coeff'][0],self.launch_data['velocity'][0],self.density)
+        self.launch_data['acceleration'][0]=(self.launch_data['thrust'][0]-self.launch_data['drag'][0]-self.launch_data['mass'][0]*9.8)/self.launch_data['mass'][0]
+        
+        self.launch_data['altitude'][1]=0
+        self.launch_data['velocity'][1]=0
+        self.launch_data['drag'][1]=calc_drag_force(self.launch_data['cross_section'][1],self.launch_data['drag_coeff'][1],self.launch_data['velocity'][1],self.density)
+        self.launch_data['acceleration'][1]=(self.launch_data['thrust'][1]-self.launch_data['drag'][1]-self.launch_data['mass'][1]*9.8)/self.launch_data['mass'][1]
         
         
-        
+        #find altitude velocity drag and accelleration for each timestamp
+        row_count=self.launch_data.shape[0] #row count is equivalent to number of time incriments (miliseconds) in sim
+        for timestamp in range(2,row_count):
+            
+            #altitude
+            self.launch_data['altitude'][timestamp]=self.launch_data['altitude'][timestamp-1]+self.launch_data['velocity'][timestamp-1]*0.001
+            if self.launch_data['altitude'][timestamp] < 0 :
+                self.launch_data['altitude'][timestamp]=0
+            
+            #velocity
+            self.launch_data['velocity'][timestamp]=self.launch_data['velocity'][timestamp-1]+self.launch_data['acceleration'][timestamp-1]*0.001
+            if self.launch_data['velocity'][timestamp] < 0 and self.launch_data['altitude'][timestamp] <= 0:
+                self.launch_data['velocity'][timestamp]=0
+                
+            #drag
+            self.launch_data['drag'][timestamp]=calc_drag_force(self.launch_data['cross_section'][timestamp],self.launch_data['drag_coeff'][timestamp],self.launch_data['velocity'][timestamp],self.density)*np.sign(self.launch_data['velocity'][timestamp])
+            
+            #acceleration
+            self.launch_data['acceleration'][timestamp]=(self.launch_data['thrust'][timestamp]-self.launch_data['drag'][timestamp]-self.launch_data['mass'][timestamp]*9.8)/self.launch_data['mass'][timestamp]
         
         
         
         
         
         #Define physics initial conditions
-        self.density=density
-        self.initial_conditions={}
-        self.initial_conditions['alt0']=0
-        self.initial_conditions['alt1']=0
-        self.initial_conditions['vel0']=1
-        m0=vehicle.wet_mass
-        cross_section_0=0.0         
-        drag_coeff_0=0.0
+        # self.density=density
+        # self.initial_conditions={}
+        # self.initial_conditions['alt0']=0
+        # self.initial_conditions['alt1']=0
+        # self.initial_conditions['vel0']=1
+        # m0=vehicle.wet_mass
+        # cross_section_0=0.0         
+        # drag_coeff_0=0.0
         
         
-        #run simulator to calculate next step for each time step in series.
+        # #run simulator to calculate next step for each time step in series.
         
         
         
-        #gather initial conditions from all stages and engines
-        for stage in vehicle.stages:
-            cross_section_0=max(cross_section_0,stage.cross_section)
-            drag_coeff_0=max(drag_coeff_0,stage.drag_coeff)
-        self.initial_conditions['mass0']=m0
-        self.initial_conditions['Cd0']=0.5*density*drag_coeff_0*cross_section_0
-        self.initial_conditions['weight0']=m0*9.8
+        # #gather initial conditions from all stages and engines
+        # for stage in vehicle.stages:
+            # cross_section_0=max(cross_section_0,stage.cross_section)
+            # drag_coeff_0=max(drag_coeff_0,stage.drag_coeff)
+        # self.initial_conditions['mass0']=m0
+        # self.initial_conditions['Cd0']=0.5*density*drag_coeff_0*cross_section_0
+        # self.initial_conditions['weight0']=m0*9.8
 
-        logging.info('launch initial conditions are ....')
-        logging.info(self.initial_conditions)
+        # logging.info('launch initial conditions are ....')
+        # logging.info(self.initial_conditions)
 
-        #build empty dataframe skelton to populate with calculations
-        self.sim_duration=pd.Timedelta(seconds=sim_duration)
-        t_start=pd.Timestamp(year=2018,month=11,day=25,hour=10,minute=30, second=0, microsecond=0)
-        t_stop=t_start+self.sim_duration
-        logging.info('building simulation data structure of a ' + str(self.sim_duration.total_seconds())+'seconds')
-        #time axis
-        time_index=pd.date_range(t_start,t_stop,freq='ms')
-        self.launch_data=pd.DataFrame(index=time_index)
-        row_count=self.launch_data.shape[0] #row count is equivalent to number of time incriments (miliseconds) in sim
-        #add blank columns to define data structure size
-        self.launch_data['stage_burn']=np.zeros(row_count)
-        self.launch_data['thrust']=np.zeros(row_count)
-        self.launch_data['mass']=np.zeros(row_count)
-        self.launch_data['weight']=np.zeros(row_count)
-        self.launch_data['drag']=np.zeros(row_count)
-        self.launch_data['accel']=np.zeros(row_count)
-        self.launch_data['vel']=np.zeros(row_count)
-        self.launch_data['alt']=np.zeros(row_count)        
-        logging.info('blank simulation data structure assembled adding')
+        # #build empty dataframe skelton to populate with calculations
+        # self.sim_duration=pd.Timedelta(seconds=sim_duration)
+        # t_start=pd.Timestamp(year=2018,month=11,day=25,hour=10,minute=30, second=0, microsecond=0)
+        # t_stop=t_start+self.sim_duration
+        # logging.info('building simulation data structure of a ' + str(self.sim_duration.total_seconds())+'seconds')
+        # #time axis
+        # time_index=pd.date_range(t_start,t_stop,freq='ms')
+        # self.launch_data=pd.DataFrame(index=time_index)
+        # row_count=self.launch_data.shape[0] #row count is equivalent to number of time incriments (miliseconds) in sim
+        # #add blank columns to define data structure size
+        # self.launch_data['stage_burn']=np.zeros(row_count)
+        # self.launch_data['thrust']=np.zeros(row_count)
+        # self.launch_data['mass']=np.zeros(row_count)
+        # self.launch_data['weight']=np.zeros(row_count)
+        # self.launch_data['drag']=np.zeros(row_count)
+        # self.launch_data['accel']=np.zeros(row_count)
+        # self.launch_data['vel']=np.zeros(row_count)
+        # self.launch_data['alt']=np.zeros(row_count)        
+        # logging.info('blank simulation data structure assembled adding')
 
 
