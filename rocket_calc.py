@@ -123,6 +123,8 @@ class vehicle:
             mass_above=mass_above+stage.wet_mass   
             self.burn_duration=self.burn_duration+stage.burn_duration
             stage.stage_data['stage_number']=np.zeros(len(stage.stage_data))+stage_index
+            stage.stage_data['drag_coeff']=np.zeros(len(stage.stage_data))+stage.drag_coeff
+            stage.stage_data['cross_section']=np.zeros(len(stage.stage_data))+stage.cross_section
             stage_index=stage_index-1
         
         #for each stage concatenate them into a vehicle_data frame
@@ -148,7 +150,7 @@ class launch:
 
         
         #create skeleton launch data 
-        time_index=pd.timedelta_range(start=pd.Timedelta(value=0,unit='ms'), end=pd.Timedelta(value=1000*sim_duration=,unit='ms'))
+        #time_index=pd.timedelta_range(start=pd.Timedelta(value=0,unit='ms'), end=pd.Timedelta(value=1000*sim_duration=,unit='ms'))
         self.launch_data=pd.DataFrame(index=time_index)
         self.launch_data['altitude']=np.zeros(len(time_index))
         self.launch_data['velocity']=np.zeros(len(time_index))
