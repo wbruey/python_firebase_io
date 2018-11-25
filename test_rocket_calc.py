@@ -16,11 +16,11 @@ print(bru_solid.final_mass)
 print(bru_solid.engine_data)
 
 #kick stage class
-bru_booster=[bru_solid, bru_solid]
+bru_booster=[bru_solid]
 bru_orbiter=[bru_solid]
-stage_1=rc.stage(0.1,bru_booster,.02,.75)
+stage_1=rc.stage(dry_mass=0.1,engines=bru_booster,cross_section=.0011,drag_coeff=0.75)
 print(stage_1.stage_data)
-stage_2=rc.stage(0.2,bru_orbiter,.03,.76)
+stage_2=rc.stage(dry_mass=0.05,engines=bru_booster,cross_section=.0011,drag_coeff=0.75)
 
 
 #kick vehicle class
@@ -31,7 +31,7 @@ print(thanks_giver.vehicle_data)
 thanks_giver.vehicle_data.to_csv('vehicle_data.csv')
 
 #kick launch class
-launch_sim=rc.launch(thanks_giver,60,1)
+launch_sim=rc.launch(thanks_giver,35,1.27)
 print(launch_sim.launch_data)
 
 launch_sim.launch_data.to_csv('launch_data.csv')
