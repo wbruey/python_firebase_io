@@ -1,5 +1,6 @@
 print('STARTING NEW TEST OF ROCKET CALC======================================================================')
 import rocket_calc as rc
+import json_ts as jts
 
 #kick logging
 rc.setup_my_logger()
