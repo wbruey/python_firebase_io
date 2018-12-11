@@ -1,0 +1,27 @@
+<html>
+<head>
+<h1>Rocket Sim</h1>
+<script type="text/javascript"
+  src="http://dygraphs.com/dygraph.min.js"></script>
+<link rel="stylesheet" src="http://dygraphs.com/2.1.0/dygraph.css" />
+</head>
+<body>
+<div id="graphdiv"
+  style="width:800px; height:300px;"></div>
+<script type="text/javascript">
+  g = new Dygraph(
+
+    // containing div
+    document.getElementById("graphdiv"), "vehicle_data.csv", {
+          title: 'Rocket Sim',
+          xlabel: 'Time (ms)',
+          rollPeriod: 10,
+      
+          
+        }
+
+
+    );
+</script>
+</body>
+</html>
